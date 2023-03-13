@@ -22,12 +22,6 @@
   ecall
 .end_macro
 
-.macro put_int
-  mv a0 t0
-  li a7 1
-  ecall
-.end_macro
-
 
 main:
   read_char
