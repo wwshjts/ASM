@@ -1,4 +1,4 @@
-.text
+
 
 #close program with exit code 0
 .macro exit_0
@@ -39,5 +39,6 @@ main:
   exit_0
  
   if_statement: 
-    put_int
+    li t0 49
+    put_char
   exit_0
