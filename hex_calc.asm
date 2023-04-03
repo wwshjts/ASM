@@ -58,6 +58,7 @@
     j while_hex_digit
   while_hex_digit_end:
 .end_macro   
+
 .macro hex_transform %frm
   addi t3 zero 10 
   addi t4 zero 16
@@ -77,6 +78,7 @@
     addi %frm %frm 55
   end_hex_transform:
 .end_macro
+
 .macro pr_hex_number %frm
   li a1 0xF #a1 is register that contains info about digit in n
   while_not_gd:
@@ -139,6 +141,7 @@ main:
     
   diff:
     sub t2 a1 a2
+    put_char s7
     pr_hex_number t2
     exit_0
     
