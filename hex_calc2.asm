@@ -74,7 +74,7 @@
   while_cnt_gz: #while counter in s3 greater than zero
     beqz s3 end_while_cnt_gz
     and s4 %frm s0 #used mask to chose digit of number
-    srl s4 s4 s11 #shit digit to lower 'bit'
+    srl s4 s4 s11 #shift digit to lower 'bit'
     blt s4 s10 print_digit
     bge s4 s10 print_hex_digit
     print_digit:
@@ -84,7 +84,7 @@
     print_hex_digit:
       addi s4 s4 55
       put_char s4
-      j upd_mask_cnt
+      # fallthrough
     upd_mask_cnt:
       addi s3 s3 -1 #update counter
       srli s0 s0 4   #update mask
@@ -122,7 +122,7 @@ main:
   addi t1 a3 -0x26
   beqz t1 conj
   #if char in a3 is |
-  addi t1 a3 -0x26
+  addi t1 a3 -0x7C
   beqz t1 disj
   addition:
     add a4 a1 a2
