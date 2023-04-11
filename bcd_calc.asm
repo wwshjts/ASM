@@ -99,7 +99,7 @@
   mv s1 %cnt_x
   mv s2 %cnt_y
   normal_and s3 s1 s2 #flag if one of number is null
-  li s4 0x16
+  li s4 0x6
   li s5 0xF
   li s6 0 #tmp register for digit of first operator
   li s7 0 #tmp register for digit of second operator
@@ -127,6 +127,29 @@
       j end_overflow_sub
             
   end_while_digits_left_sub:  
+  li s8 0 #start to correct bits
+  addi s1 s1 1
+  while_greater_digit:
+    beqz s1 while_greater_digit_end
+    and s6 %x s5 #take current digit of first operator
+    add s8 s6 s4  #try to overflow
+    srli s8 s8 4
+    and s8 s8 s5 
+    addi s1 s1 -1 
+    normal_and s0 s8 s5 #check the overflow 
+    bnez s0 overflow_corr
+    overflow_corr_end:
+    addi s1 s1 -1
+    slli s4 s4 4
+    slli s5 s5 4
+    j while_greater_digit
+    overflow_corr:
+      sub %x %x s4 #correct bit's
+      j overflow_corr_end
+  while_greater_digit_end:
+  
+  
+  
 .end_macro
 main:
   #register's
@@ -135,4 +158,5 @@ main:
   rd_bcd_number a1 s10
   rd_bcd_number a2 s11
   sub_bcd a1 a2 s10 s11
+  #sub a1 a1 a2
   exit_0
