@@ -90,12 +90,49 @@
   end_while_digits_left:
   
 .end_macro
-
+.macro sub_bcd %x %y %cnt_x %cnt_y
+  #register's list
+  #x - first operand; y - second operand
+  #s1 - amount of digit's in first operand; s2 in second
+  #s0 - overflow reg
+  li s0 0  #s0 - overflow reg
+  mv s1 %cnt_x
+  mv s2 %cnt_y
+  normal_and s3 s1 s2 #flag if one of number is null
+  li s4 0x16
+  li s5 0xF
+  li s6 0 #tmp register for digit of first operator
+  li s7 0 #tmp register for digit of second operator
+  li s8 0 #tmp register for sum of current digits
+  while_digits_left_sub:
+    beqz s3 end_while_digits_left_sub
+    and s6 %x s5 #take current digit of first operator
+    and s7 %y s5 #take current digit of second operator
+    sub s8 s6 s7 #sub two digits
+    srli s8 s8 4
+    and s8 s8 s5 
+    normal_and s0 s8 s5 #check the overflow 
+    bnez s0 overflow_sub
+    end_overflow_sub:
+    sub %x %x s7
+    addi s1 s1 -1
+    addi s2 s2 -1 
+    slli s4 s4 4
+    slli s5 s5 4
+    normal_and s3 s1 s2
+    
+    j while_digits_left_sub
+    overflow_sub:
+      sub %x %x s4 #correct bit's
+      j end_overflow_sub
+            
+  end_while_digits_left_sub:  
+.end_macro
 main:
   #register's
   #s10 contains amount of digit's in first operand
   #s11 contains amount of digit's in second operand
   rd_bcd_number a1 s10
   rd_bcd_number a2 s11
-  sum_bcd a1 a2 s10 s11
+  sub_bcd a1 a2 s10 s11
   exit_0
