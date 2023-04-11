@@ -138,6 +138,8 @@
       j end_overflow
             
   end_while_digits_left:
+  li s4 0x6
+  li s5 0xF
   li s8 0 #start to correct bits
   mv  s1 %cnt_x
   addi s1 s1 1
@@ -197,7 +199,10 @@
       j end_overflow_sub
             
   end_while_digits_left_sub:  
+  li s4 0x6
+  li s5 0xF
   li s8 0 #start to correct bits
+  mv  s1 %cnt_x
   addi s1 s1 1
   while_greater_digit:
     beqz s1 while_greater_digit_end
