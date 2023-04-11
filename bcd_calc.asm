@@ -71,7 +71,8 @@
     add s8 s6 s7 #add two digits
     add s8 s8 s4  #try to overflow
     srli s8 s8 4
-    normal_and s0 s8 s7 #check the overflow 
+    and s8 s8 s5 
+    normal_and s0 s8 s5 #check the overflow 
     bnez s0 overflow
     end_overflow:
     add %x %x s7
