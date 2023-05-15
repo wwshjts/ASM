@@ -81,7 +81,6 @@ main:
   
   diff:
     call sub_bcd
-    read_char a0
     mv s0 a1
     call count_digits
     mv a2 a1
@@ -179,6 +178,7 @@ sum_bcd:
   lw s7 28(sp)
   lw s8 32(sp)
   lw ra 36(sp)
+  addi sp sp 40
   ret
 
 sub_bcd:
@@ -264,6 +264,7 @@ sub_bcd:
   lw s7 28(sp)
   lw s8 32(sp)
   lw ra 36(sp)
+  addi sp sp 40
   ret
 read_dec:
   #Терминальная ветвь
@@ -309,6 +310,7 @@ count_digits:
   #Эпилог
   lw s2 0(sp)
   lw ra 4(sp)
+  addi sp sp 8
   ret
   
   
@@ -391,6 +393,7 @@ rec_mult:
   li a4 1
 
   call sub_bcd
+  #read_char t6
   mv a2 a1
   mv a1 s1
   call rec_mult   #Запускаем рекурсию
@@ -398,17 +401,18 @@ rec_mult:
   mv t0 a1
   mv s2 a2
   call count_digits
+  #read_char t6
 
   mv a3 a1
   mv a4 a1
   mv a1 t0
   mv a2 t0
-  call sum_bcd
+  #call sum_bcd
+  #read_char t6
   mv a2 s2
   
   
   #Эпилог 
-    exit_0
   lw s1 0(sp)
   lw s2 4(sp)
   lw ra 8(sp)
