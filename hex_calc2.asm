@@ -43,8 +43,8 @@
     addi t1 t1 -10 #try to figure out is the digit is the end of the line
     beqz t1 while_hex_digit_end #if t1 is eoln break
     char_transform t0 #char transform
-    slli %dst %dst 4 #multiply our hex number on 16
-    add %dst %dst t0 #add one digit
+    slli %dst %dst 4  #multiply our hex number on 16
+    add %dst %dst t0  #add one digit
     j while_hex_digit
   while_hex_digit_end:
   li t0 0
