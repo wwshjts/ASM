@@ -1,0 +1,418 @@
+.macro read_char %rd_to
+  li a7, 12
+  ecall
+  mv %rd_to a0
+.end_macro
+
+#put char from %dst
+.macro put_char %dst
+  mv a0 %dst
+  li a7 11
+  ecall
+.end_macro
+#exit macro
+.macro exit_0
+  li a0, 0
+  li a7, 93
+  ecall
+.end_macro
+
+.macro normal_and %dst %a1 %a2 
+  li t0 0
+  li t1 0
+  bnez %a1 a1_zero #if a1 is zero mv 1 to %a1 
+  end_a1_zero:
+  bnez %a2 a2_zero#if a2 is zero mv 1 to %a2
+  end_a2_zero:
+  j end_normal_and
+  a1_zero:
+    li t0 1
+    j end_a1_zero
+  a2_zero:
+    li t1 1
+    j end_a2_zero
+  end_normal_and:
+    and %dst t0 t1
+    mv t0 zero
+    mv t1 zero
+.end_macro
+
+
+main:
+  #register's
+  #s10 contains amount of digit's in first operand
+  #s11 contains amount of digit's in second operand
+  call read_dec
+  mv s0 a1
+  mv s1 a2
+  mv a1 zero
+  mv a2 zero
+  call read_dec
+  mv s2 a1
+  mv s3 a2
+  mv a1 s0
+  mv a2 s2
+  mv a3 s1
+  mv a4 s3 
+  read_char t0
+  li t1 0xA
+  put_char t1 #print new line
+  #operand code's
+  # '+' 43 = 0x2B
+  # '-' 45 = 0x2D
+  #try if operation is addition
+  #i use t1 as tmp register for check
+  addi t1 t0 -0x2B
+  beqz t1 addition 
+  #if char in a3 is minus
+  addi t1 t0 -0x2D
+  beqz t1 diff
+  #if char in t0 *
+  addi t1 t0 -42
+  beqz t1 multipl
+  addition:
+    call sum_bcd
+    mv s0 a1
+    call count_digits
+    mv a2 a1
+    mv a1 s0
+    call print_dec
+    exit_0
+  
+  diff:
+    call sub_bcd
+    read_char a0
+    mv s0 a1
+    call count_digits
+    mv a2 a1
+    mv a1 s0
+    call print_dec
+    exit_0
+    
+  multipl:
+    read_char t0
+    call rec_mult
+    exit_0
+
+  exit_0
+sum_bcd:
+  #Пролог
+  addi sp sp -40
+  sw s0 0(sp)
+  sw s1 4(sp)
+  sw s2 8(sp)
+  sw s3 12(sp)
+  sw s4 16(sp)
+  sw s5 20(sp)
+  sw s6 24(sp)
+  sw s7 28(sp)
+  sw s8 32(sp)
+  sw ra 36(sp)
+  #register's list
+  #x - first operand; y - second operand
+  #s1 - amount of digit's in first operand; s2 in second
+  #s0 - overflow reg
+  li s0 0  #s0 - overflow reg
+  mv s1 a3
+  mv s2 a4
+  normal_and s3 s1 s2 #flag if one of number is null
+  li s4 0x6
+  li s5 0xF
+  li s6 0 #tmp register for digit of first operator
+  li s7 0 #tmp register for digit of second operator
+  li s8 0 #tmp register for sum of current digits
+  while_digits_left:
+    beqz s3 end_while_digits_left
+    and s6 a1 s5 #take current digit of first operator
+    and s7 a2 s5 #take current digit of second operator
+    add s8 s6 s7 #add two digits
+    add s8 s8 s4  #try to overflow
+    srli s8 s8 4
+    and s8 s8 s5 
+    normal_and s0 s8 s5 #check the overflow 
+    bnez s0 overflow
+    end_overflow:
+    add a1 a1 s7
+    addi s1 s1 -1
+    addi s2 s2 -1 
+    slli s4 s4 4
+    slli s5 s5 4
+    normal_and s3 s1 s2
+    
+    j while_digits_left
+    overflow:
+      add a1 a1 s4 #correct bit's
+      j end_overflow
+            
+  end_while_digits_left:
+  li s4 0x6
+  li s5 0xF
+  li s8 0 #start to correct bits
+  mv  s1 a3
+  addi s1 s1 1
+  while_greater_digit_sum:
+    beqz s1 while_greater_digit_sum_end
+    and s6 a1 s5 #take current digit of first operator
+    add s8 s6 s4  #try to overflow
+    srli s8 s8 4
+    and s8 s8 s5 
+    addi s1 s1 -1 
+    normal_and s0 s8 s5 #check the overflow 
+    bnez s0 overflow_corr_sum
+    overflow_corr_sum_end:
+    slli s4 s4 4
+    slli s5 s5 4
+    j while_greater_digit_sum
+    overflow_corr_sum:
+      add a1 a1 s4 #correct bit's
+      j overflow_corr_sum_end
+  while_greater_digit_sum_end:
+  
+  #Эпилог
+  lw s0 0(sp)
+  lw s1 4(sp)
+  lw s2 8(sp)
+  lw s3 12(sp)
+  lw s4 16(sp)
+  lw s5 20(sp)
+  lw s6 24(sp)
+  lw s7 28(sp)
+  lw s8 32(sp)
+  lw ra 36(sp)
+  ret
+
+sub_bcd:
+  #Пролог
+  addi sp sp -40
+  sw s0 0(sp)
+  sw s1 4(sp)
+  sw s2 8(sp)
+  sw s3 12(sp)
+  sw s4 16(sp)
+  sw s5 20(sp)
+  sw s6 24(sp)
+  sw s7 28(sp)
+  sw s8 32(sp)
+  sw ra 36(sp)
+  
+  #register's list
+  #x - first operand; y - second operand
+  #s1 - amount of digit's in first operand; s2 in second
+  #s0 - overflow reg
+  li s0 0  #s0 - overflow reg
+  mv s1 a3
+  mv s2 a4
+  normal_and s3 s1 s2 #flag if one of number is null
+  li s4 0x6
+  li s5 0xF
+  li s6 0 #tmp register for digit of first operator
+  li s7 0 #tmp register for digit of second operator
+  li s8 0 #tmp register for sum of current digits
+  while_digits_left_sub:
+    beqz s3 end_while_digits_left_sub
+    and s6 a1 s5 #take current digit of first operator
+    and s7 a2 s5 #take current digit of second operator
+    sub s8 s6 s7 #sub two digits
+    srli s8 s8 4
+    and s8 s8 s5 
+    normal_and s0 s8 s5 #check the overflow 
+    bnez s0 overflow_sub
+    end_overflow_sub:
+    sub a1 a1 s7
+    addi s1 s1 -1
+    addi s2 s2 -1 
+    slli s4 s4 4
+    slli s5 s5 4
+    normal_and s3 s1 s2
+    
+    j while_digits_left_sub
+    overflow_sub:
+      sub a1 a1 s4 #correct bit's
+      j end_overflow_sub
+            
+  end_while_digits_left_sub:  
+  li s4 0x6
+  li s5 0xF
+  li s8 0 #start to correct bits
+  mv  s1 a3
+  addi s1 s1 1
+  while_greater_digit:
+    beqz s1 while_greater_digit_end
+    and s6 a1 s5 #take current digit of first operator
+    add s8 s6 s4  #try to overflow
+    srli s8 s8 4
+    and s8 s8 s5 
+    addi s1 s1 -1 
+    normal_and s0 s8 s5 #check the overflow 
+    bnez s0 overflow_corr
+    overflow_corr_end:
+    slli s4 s4 4
+    slli s5 s5 4
+    j while_greater_digit
+    overflow_corr:
+      sub a1 a1 s4 #correct bit's
+      j overflow_corr_end
+  while_greater_digit_end:
+  #Эпилог
+  lw s0 0(sp)
+  lw s1 4(sp)
+  lw s2 8(sp)
+  lw s3 12(sp)
+  lw s4 16(sp)
+  lw s5 20(sp)
+  lw s6 24(sp)
+  lw s7 28(sp)
+  lw s8 32(sp)
+  lw ra 36(sp)
+  ret
+read_dec:
+  #Терминальная ветвь
+  read_char t0
+  li t1 10              #Если в t0 не символ конца строки
+  bne t0 t1 read_nxt    #То продолжаем рекурсивно считывать знаки
+  
+  ret                   #Иначе возвращаемся вверх по рекурсии
+  
+  read_nxt:
+  #Эпилог
+  addi sp sp -4  #Выделяем 8 байт под фрейм
+  sw ra 0(sp)   #Сохраняем ra по адрессу sp
+    
+   
+  addi t0 t0 -48 #Приводим символ к цифре
+  slli a1 a1 4   #Сдвигаем результат
+  add a1 a1 t0   #Добавляем прочитанную цифру
+  addi a2 a2 1      #Увеличиваем счетчик прочитанных чисел
+  
+  call read_dec  #Считываем следующий символ
+  
+  #Эпилог
+  lw ra 0(sp)
+  addi sp sp 4
+  ret
+
+count_digits:
+  #Пролог
+  addi sp sp -8
+  sw s2 0(sp)
+  sw ra 4(sp)
+  
+  mv s2 a1		#copy original number to s2 (it will corrupted)
+  li a1 0
+  while_is_number:
+    beqz s2 end_while_is_number 
+    srli s2 s2 4 	#shift s2 to left while it is not zero 
+    addi a1 a1 1	#counting digits a1
+    j while_is_number
+  end_while_is_number:
+  
+  #Эпилог
+  lw s2 0(sp)
+  lw ra 4(sp)
+  ret
+  
+  
+  #Эпилог
+  lw ra 0(sp)
+  addi sp sp 4
+  ret
+  
+  
+#a1 - число, которое необходимо вывести
+#a2 - количество знаков в нем
+print_dec:
+  #Терминальная ветвь
+  bnez a2 print_digit #Если в числе остались цифры,
+                      #То продолжаем печатать
+                      
+  ret                 #Возвращаемся вверх по рекурсии
+  
+  print_digit:
+  #Пролог
+  addi sp sp -16     #Выделяем 16 байт под фрейм
+  sw ra 0(sp)        #Записываем ra
+  sw s0 4(sp)        #Запоминаем волатильные регистры
+  sw s1 8(sp)        #Которые попортятся в ходе программы
+  sw s3 12(sp)
+  
+  mv s0 a1           #Сохраняем аргументы функции
+  mv s1 a2           #т.к. a-регистры волатильные
+                     #и не преживут вызова mod10
+  
+  li t0 0xF          #Вычисляем остаток от деления на 10 a1
+  and a1 a1 t0
+  mv s3 a1           #Запоминаем его
+  
+  mv a1 s0           #Подготавливаем следующий рекурсивный вызов
+  srli a1 a1 4       
+  addi a2 a2 -1
+  
+  call print_dec
+  
+  addi s3 s3 48
+  put_char s3
+  
+  #Эпилог
+ 
+  lw s3 12(sp)
+  lw s2 8(sp)
+  lw s1 4(sp)
+  lw ra 0(sp)
+  addi sp sp 16
+
+  ret
+  
+rec_mult:
+  #Терминальная ветвь
+  bnez a2 recursion #Если второй аргумент не нуль,
+  		    #то запускаем р екурсию                   
+  li a1 0           #Иначе мы считаем функцию rec_mult a1 0
+                    #реузльтат, очевидно, ноль
+                    #Записываем ответ в a1
+  ret               #возвращаемся к вызывавшей функции
+  
+  recursion:
+  #Пролог
+  addi sp sp -12    #Выделяем фрейм размером 8 байта
+  sw ra 8(sp)      #Сохраняем адресс возврата по ардрессу sp + 12
+  
+  sw s1 0(sp) 	   #Сохраняем параметр вызова по адресу sp + 4
+  sw s2 4(sp)	   #Это необходимо, т.к. в процессе выполнения
+  		   #Мы обязательно изменим регистр a1
+  mv s1 a1	   #После выполнения функции в нем будет находиться ответ
+  mv s2 a2         #То есть функция должна помнить с каким параметром она была вызвана
+
+  mv a1 s2
+  call count_digits
+  mv t0 a1
+  mv a1 s2
+  li a2 1
+  mv a3 t0
+  li a4 1
+
+  call sub_bcd
+  mv a2 a1
+  mv a1 s1
+  call rec_mult   #Запускаем рекурсию
+ 
+  mv t0 a1
+  mv s2 a2
+  call count_digits
+
+  mv a3 a1
+  mv a4 a1
+  mv a1 t0
+  mv a2 t0
+  call sum_bcd
+  mv a2 s2
+  
+  
+  #Эпилог 
+    exit_0
+  lw s1 0(sp)
+  lw s2 4(sp)
+  lw ra 8(sp)
+  addi sp sp 12
+  ret
+ 
+  

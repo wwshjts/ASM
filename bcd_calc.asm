@@ -19,7 +19,7 @@
 .macro count_digits %frm %dst
   li %dst 0		#counter
   mv s2 %frm		#copy original number to s2 (it will corrupted)
-  beqz s2 end_while_is_number #BUG!!!!!!!!!!!!1
+  beqz s2 end_while_is_number #
   while_is_number:
     srli s2 s2 4 	#shift s2 to left while it is not zero 
     addi %dst %dst 1	#counting digits of %frm 
@@ -244,7 +244,7 @@ main:
   #if char in a3 is minus
   addi t1 a3 -0x2D
   beqz t1 diff
-    addition:
+  addition:
     sum_bcd a1 a2 s10 s11
     pr_hex_number a1
     exit_0
