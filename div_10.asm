@@ -102,10 +102,31 @@
 
 
 main:
-  rd_hex_number a1 #read operand
-  call div10
-  pr_hex_number a1
-  exit_0
+  rd_hex_number a1 #read first operand
+  read_char a3
+  li a4 0xA
+  put_char a4 #print new line
+  #operand code's
+  # '/' 43 = 0x2B
+  # '%' 45 = 0x25
+  
+  #try if operation is addition
+  #i use t1 as tmp register for check
+  addi t1 a3 -0x2B
+  beqz t1 div_
+  #if char in a3 is minus
+  addi t1 a3 -0x25
+  beqz t1 mod_
+  
+  div_:
+    call div10
+    pr_hex_number a1
+    exit_0
+  mod_:
+    call mod10
+    pr_hex_number a1
+    exit_0
+
  
 # |  caller  |
 # | -------- |
@@ -147,3 +168,41 @@ div10:
   lw ra 4(sp)
   addi sp sp 8
   ret
+  
+mult:
+  li t0, 0  #res
+ m_loop:
+  andi t1, a2, 1 #bit 1?
+  beqz t1, m_nonset
+  add  t0, t0, a1 
+  
+ m_nonset:
+    slli a1, a1, 1 #double first arg
+    srli a2, a2, 1
+    bnez a2, m_loop  
+    mv a1, t0
+    ret
+ 
+mod10:
+  #Пролог
+  mv s0 ra      #Перемещаем ra на caller-save регистр
+  
+  mv s1 a1      #Перемещаем a1 на caller-save регистр
+  call div10    #Вычисляем целую часть от деления на 10
+  
+  li a2 0xA     #Результат умножаем на 10
+  call mult     #a1 * a2     
+  sub a1 s1 a1  #Вычисляем остаток
+  
+  #Эпилог
+  mv ra s0     
+  ret
+
+
+
+
+
+
+
+
+
