@@ -384,30 +384,37 @@ rec_mult:
   mv s1 a1	   #После выполнения функции в нем будет находиться ответ
   mv s2 a2         #То есть функция должна помнить с каким параметром она была вызвана
 
-  mv a1 s2
-  call count_digits
-  mv t0 a1
-  mv a1 s2
-  li a2 1
-  mv a3 t0
+  mv a1 s2         #Перезаписываем a1 значением второго аргумента
+  call count_digits #Считаем количество цифр в нем
+  #read_char t6 
+  mv t0 a1         #Подготавливаем все к вызову
+  mv a1 s2         #Функции вычитания. Загружаем регистры
+  li a2 1          #a1 := второй аргумент a2:=1 a3:=длина второго аргумента
+  mv a3 t0         #a4 := 1 (длина 1-ки)
   li a4 1
-
-  call sub_bcd
-  #read_char t6
-  mv a2 a1
-  mv a1 s1
-  call rec_mult   #Запускаем рекурсию
+  call sub_bcd     #уменьшаем значение второго аргумента на 1
+  
+  read_char t6
+  mv a2 a1         #Подготавливаем новый вызов
+  mv a1 s1         #На a2 записываем аргумент2 - 1. На a1 первый аргумент
+  call rec_mult    #Запускаем рекурсию
  
   mv t0 a1
   mv s2 a2
   call count_digits
   #read_char t6
-
-  mv a3 a1
   mv a4 a1
-  mv a1 t0
+  
+  mv a1 s1
+  call count_digits
+  #read_char t6
+  mv a3 a1
+  
+  mv a1 s1
   mv a2 t0
-  #call sum_bcd
+  bgt a4 a3 swap
+  end_swap:
+  call sum_bcd #Вот здесь ошибка т.к. в функции всегда большее складываетс с меньшим по кол-ву знаков
   #read_char t6
   mv a2 s2
   
@@ -418,5 +425,16 @@ rec_mult:
   lw ra 8(sp)
   addi sp sp 12
   ret
+  
+  swap:
+   mv t1 a1
+   mv t2 a2
+   mv t3 a3
+   mv t4 a4
+   mv a1 t2
+   mv a2 t1
+   mv t3 a4
+   mv t4 a3
+  j end_swap
  
   
