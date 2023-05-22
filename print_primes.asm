@@ -20,8 +20,9 @@
 .end_macro
 
 main:
-  li a0 14
+  call read_dec
   call sieve
+  mv a1 a0
 
 exit_0
 
