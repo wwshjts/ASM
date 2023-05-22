@@ -165,8 +165,8 @@ print_dec:
   
   #Эпилог
   lw s3 12(sp)
-  lw s2 8(sp)
-  lw s1 4(sp)
+  lw s1 8(sp)
+  lw s0 4(sp)
   lw ra 0(sp)
   addi sp sp 16
   ret
@@ -248,7 +248,26 @@ sieve:
    j while_i_lt_n
        
    end_while_i_lt_n:
+   #выводим числа
+   li s2 1 		       #Число, которое хотим вывести
+   while_print_nums:
+     addi s2 s2 1                    
+     bge s2 s1 end_while_print_nums  #Если напечатали все числа, то break
      
+     slli t0 s2 2                    #Вычисляем индекс числа в памяти
+     add  t0 t0 sp
+     
+     lw t1 0(t0)                     #Загружаем пометку
+     beqz t1 while_print_nums        #Если число не простое, то continue
+      
+     mv a0 s2                        #Печатаем простое число
+     call print_dec              
+     li a1 0xA                       #Символ конца строки
+     put_char a1
+
+     j while_print_nums
+     
+   end_while_print_nums:
      
    
    
